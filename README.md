@@ -1,31 +1,56 @@
-# template
+# languagetool-docker
 
-**GitHub template** for new repositories.
+Run [LanguageTool](https://languagetool.org/)’s embedded HTTP server locally with Docker.
 
-Use this when starting a repo so CI, agent docs, and CAPA are already wired — then replace the placeholder product text with the real project.
+This follows [dev.languagetool.org/http-server](https://dev.languagetool.org/http-server). The local server does **not** include LanguageTool Cloud AI rules or add-on synonyms.
 
-## What’s included
+## Quick start
 
-| Piece | Role |
-| ----- | ---- |
-| [`.github/workflows/ci.yml`](.github/workflows/ci.yml) | Thin CI → shared reusable workflows (`@latest`) |
-| [`.github/dependabot.yml`](.github/dependabot.yml) | Weekly pip / npm / github-actions (no `noBump` — Semver off) |
-| [`.github/CODEOWNERS`](.github/CODEOWNERS) | Default code owner (edit to your GitHub handle) |
-| [`AGENTS.md`](AGENTS.md) | Orientation for coding agents |
-| [`capabilities.yaml`](capabilities.yaml) | CAPA source of truth ([capa.sh](https://capa.sh/)) |
+```bash
+docker compose up -d
+```
 
-**actions HOW-TO-USE already applied on this repo:** thin `ci.yml` `@latest`, CODEOWNERS + Dependabot, `dependencies` label, soft `main` protection (`CI / CI`, reviews count 0, code-owner reviews off for Dependabot merge, admin bypass), security alerts/scanning, Dependabot auto-merge + `allow_auto_merge`. Semver / `cd.yml` / bump labels omitted on purpose.
+First build downloads LanguageTool stable (~250 MB) and may take a few minutes.
 
-## Create a repo from this template
+## Test
 
-1. On GitHub: **Use this template** → create the new repository.
-2. Clone the new repo locally.
-3. Edit `README.md` / `AGENTS.md` for the product; add `pyproject.toml` and/or `package.json` as needed.
-4. Update [`.github/CODEOWNERS`](.github/CODEOWNERS) to the owning handle(s).
-5. CI Detect picks up language lanes automatically (`allow-empty` can be removed once a lane exists).
-6. Re-apply HOW-TO-USE steps 3–5 on the **new** repo (labels, soft branch protection, security) — GitHub does not copy those from the template.
-7. Optional: `capa install` after editing `capabilities.yaml`.
+Browser:
 
-## CI
+http://localhost:8081/v2/check?language=en-US&text=my+text
 
-Required check on `main`: **`CI / CI`**. Pin reusable workflows to **`@latest`**. Full adopt checklist lives in the shared actions hub `HOW-TO-USE.md`.
+curl:
+
+```bash
+curl -d "language=en-US" -d "text=a simple test" http://localhost:8081/v2/check
+```
+
+## Stop
+
+```bash
+docker compose down
+```
+
+`restart: unless-stopped` keeps the container running across Docker restarts until you stop it.
+
+## Privacy
+
+The image starts with `--public` so host → container port mapping works. Anything that can reach `localhost:8081` (or the published port on your network) can send text to this server. Do not expose that port on the public internet without a reverse proxy and access control.
+
+Text is checked on your machine; it is not sent to LanguageTool Cloud.
+
+## Pin a version
+
+By default the image downloads `LanguageTool-stable.zip`. To pin a release:
+
+```bash
+docker compose build --build-arg LT_URL=https://languagetool.org/download/LanguageTool-6.6.zip
+docker compose up -d
+```
+
+## Browser add-on
+
+In the LanguageTool browser add-on: options → Experimental settings → Local server (port `8081`).
+
+## License
+
+This repository’s Docker wrapper is MIT. The LanguageTool software downloaded into the image is licensed separately by the LanguageTool project.

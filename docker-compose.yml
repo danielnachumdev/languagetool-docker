@@ -1,0 +1,7 @@
+services:
+  languagetool:
+    build: .
+    container_name: languagetool
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
